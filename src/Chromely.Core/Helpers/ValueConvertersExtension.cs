@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="ValueConvertersExtension.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
@@ -139,6 +139,20 @@ namespace Chromely.Core.Helpers
         /// The <see cref="string"/>.
         /// </returns>
         public static string EnumToString(this CefHandlerKey key)
+        {
+            return Enum.GetName(key.GetType(), key);
+        }
+
+        /// <summary>
+        /// The enum to string.
+        /// </summary>
+        /// <param name="key">
+        /// The key.
+        /// </param>
+        /// <returns>
+        /// The <see cref="string"/>.
+        /// </returns>
+        public static string EnumToString(this CefEventKey key)
         {
             return Enum.GetName(key.GetType(), key);
         }

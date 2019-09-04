@@ -1,18 +1,18 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="FrameHandler.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
+using global::CefSharp;
+using Chromely.CefSharp.Winapi.Browser.FrameHandlers;
+using Chromely.Core.Infrastructure;
+
 namespace Chromely.CefSharp.Winapi
 {
-    using global::CefSharp;
-    using Chromely.CefSharp.Winapi.Browser.FrameHandlers;
-    using Chromely.Core.Infrastructure;
-
     /// <summary>
     /// The frame handler extension.
     /// </summary>
@@ -21,7 +21,7 @@ namespace Chromely.CefSharp.Winapi
         /// <summary>
         /// The browser.
         /// </summary>
-        private static IBrowser browser;
+        private static IBrowser mBrowser;
 
         /// <summary>
         /// Gets the browser.
@@ -30,18 +30,18 @@ namespace Chromely.CefSharp.Winapi
         {
             get
             {
-                if (browser != null)
+                if (mBrowser != null)
                 {
-                    return browser;
+                    return mBrowser;
                 }
 
                 var cefSharpFrameHandler = IoC.GetInstance<CefSharpFrameHandler>(typeof(CefSharpFrameHandler).FullName);
                 if (cefSharpFrameHandler != null)
                 {
-                    browser = cefSharpFrameHandler.Browser;
+                    mBrowser = cefSharpFrameHandler.Browser;
                 }
 
-                return browser;
+                return mBrowser;
             }
         }
 

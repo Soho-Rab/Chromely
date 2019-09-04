@@ -1,24 +1,24 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="ExtensionMethods.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Linq;
+using System.Web;
+
+using LitJson;
+
 namespace Chromely.Core.RestfulService
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Collections.Specialized;
-    using System.ComponentModel;
-    using System.Linq;
-    using System.Web;
-
-    using LitJson;
-
     /// <summary>
     /// The extension methods.
     /// </summary>
@@ -145,6 +145,20 @@ namespace Chromely.Core.RestfulService
                     return dict.ToDictionary<KeyValuePair<string, string>, string, object>(item => item.Key, item => item.Value);
                 }
 
+                if (obj is JsonData jsonDataObj)
+                {
+                    if (jsonDataObj.IsObject)
+                    {
+                        var objDic = new Dictionary<string, object>();
+                        foreach (var key in jsonDataObj.Keys)
+                        {
+                            objDic[key] = jsonDataObj[key];
+                        }
+
+                        return objDic;
+                    }
+                }
+
                 // If json
                 if (obj is string)
                 {
@@ -256,6 +270,85 @@ namespace Chromely.Core.RestfulService
             }
 
             return nameValueCollection.AllKeys.ToDictionary(x => x, x => nameValueCollection[x]);
+        }
+
+        public static string JavaScriptStringEncode(this string value)
+        {
+            return JavaScriptStringEncode(value, false);
+        }
+
+        // https://github.com/mono/mono/blob/master/mcs/class/System.Web/System.Web/HttpUtility.cs
+        public static string JavaScriptStringEncode(this string value, bool addDoubleQuotes)
+        {
+            if (String.IsNullOrEmpty(value))
+                return addDoubleQuotes ? "\"\"" : String.Empty;
+
+            int len = value.Length;
+            bool needEncode = false;
+            char c;
+            for (int i = 0; i < len; i++)
+            {
+                c = value[i];
+
+                if (c >= 0 && c <= 31 || c == 34 || c == 39 || c == 60 || c == 62 || c == 92)
+                {
+                    needEncode = true;
+                    break;
+                }
+            }
+
+            if (!needEncode)
+                return addDoubleQuotes ? "\"" + value + "\"" : value;
+
+            var sb = new System.Text.StringBuilder();
+            if (addDoubleQuotes)
+                sb.Append('"');
+
+            for (int i = 0; i < len; i++)
+            {
+                c = value[i];
+                if (c >= 0 && c <= 7 || c == 11 || c >= 14 && c <= 31 || c == 39 || c == 60 || c == 62)
+                    sb.AppendFormat("\\u{0:x4}", (int)c);
+                else switch ((int)c)
+                    {
+                        case 8:
+                            sb.Append("\\b");
+                            break;
+
+                        case 9:
+                            sb.Append("\\t");
+                            break;
+
+                        case 10:
+                            sb.Append("\\n");
+                            break;
+
+                        case 12:
+                            sb.Append("\\f");
+                            break;
+
+                        case 13:
+                            sb.Append("\\r");
+                            break;
+
+                        case 34:
+                            sb.Append("\\\"");
+                            break;
+
+                        case 92:
+                            sb.Append("\\\\");
+                            break;
+
+                        default:
+                            sb.Append(c);
+                            break;
+                    }
+            }
+
+            if (addDoubleQuotes)
+                sb.Append('"');
+
+            return sb.ToString();
         }
 
         /// <summary>

@@ -1,40 +1,42 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="Window.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Linq;
+
+using CefSharp;
+using Chromely.CefSharp.Winapi.Browser;
+using Chromely.CefSharp.Winapi.Browser.Handlers;
+using Chromely.CefSharp.Winapi.Browser.Internals;
+using Chromely.Common;
+using Chromely.Core;
+using Chromely.Core.Infrastructure;
+using WinApi.User32;
+
 namespace Chromely.CefSharp.Winapi.BrowserWindow
 {
-    using System;
-    using System.Linq;
-
-    using Chromely.CefSharp.Winapi.Browser;
-    using Chromely.CefSharp.Winapi.Browser.Handlers;
-    using Chromely.CefSharp.Winapi.Browser.Internals;
-    using Chromely.Core;
-    using Chromely.Core.Infrastructure;
-
-    using global::CefSharp;
-
-
     /// <summary>
     /// The window.
     /// </summary>
-    public class Window : NativeWindow
+    internal class Window : NativeWindow
     {
         /// <summary>
         /// The host/app/window application.
         /// </summary>
-        private readonly HostBase mApplication;
+        private readonly HostBase _application;
 
         /// <summary>
-        /// The ChromiumWebBrowser object.
+        /// The host config.
         /// </summary>
-        private readonly ChromiumWebBrowser mBrowser;
+        private readonly ChromelyConfiguration _hostConfig;
+
+        private ChromeWidgetMessageInterceptor _interceptor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Window"/> class.
@@ -51,44 +53,40 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
         public Window(HostBase application, ChromelyConfiguration hostConfig, CefSettings settings)
             : base(hostConfig)
         {
-            mBrowser = new ChromiumWebBrowser(settings, hostConfig.StartUrl);
-            mBrowser.IsBrowserInitializedChanged += IsBrowserInitializedChanged;
+            _hostConfig = hostConfig;
+            Browser = new ChromiumWebBrowser(settings, _hostConfig.StartUrl);
+            Browser.IsBrowserInitializedChanged += IsBrowserInitializedChanged;
 
             // Set handlers
-            mBrowser.SetHandlers();
+            Browser.SetEventHandlers();
+            Browser.SetCustomHandlers();
 
             RegisterJsHandlers();
-            mApplication = application;
+            _application = application;
 
             ShowWindow();
         }
 
-        #region Close/Dispose
-
         /// <summary>
-        /// The close.
+        /// Gets the browser.
         /// </summary>
-        public void Close()
-        {
-            Dispose();
-        }
+        public ChromiumWebBrowser Browser { get; private set; }
+
+        #region Dispose
 
         /// <summary>
         /// The dispose.
         /// </summary>
         public void Dispose()
         {
-            if (mBrowser != null)
+            if (Browser != null)
             {
-                var browser = mBrowser.GetBrowser();
-                var host = browser.GetHost();
-                host.CloseBrowser(true);
-                host.Dispose();
-                browser.Dispose();
+                Browser.Dispose();
+                Browser = null;
             }
         }
 
-        #endregion Close/Dispose
+        #endregion Dispose
 
         /// <summary>
         /// The on realized.
@@ -107,7 +105,7 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
         /// </exception>
         protected override void OnCreate(IntPtr hwnd, int width, int height)
         {
-            mBrowser?.CreateBrowser(hwnd);
+            Browser?.CreateBrowser(hwnd, _hostConfig.StartUrl);
         }
 
         /// <summary>
@@ -121,7 +119,7 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
         /// </param>
         protected override void OnSize(int width, int height)
         {
-            mBrowser?.SetSize(width, height);
+            Browser?.SetSize(width, height);
         }
 
         /// <summary>
@@ -129,7 +127,7 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
         /// </summary>
         protected override void OnExit()
         {
-            mApplication.Quit();
+            _application.Quit();
         }
 
         /// <summary>
@@ -146,8 +144,24 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
             if (eventArgs.IsBrowserInitialized)
             {
                 var size = GetClientSize();
-                mBrowser.SetSize(size.Width, size.Height);
-                mBrowser.IsBrowserInitializedChanged -= IsBrowserInitializedChanged;
+                Browser.SetSize(size.Width, size.Height);
+                Browser.IsBrowserInitializedChanged -= IsBrowserInitializedChanged;
+                Browser.GetBrowserHost().GetWindowHandle();
+
+                if (_hostConfig.HostPlacement.Frameless && _hostConfig.HostPlacement.FramelessOptions.IsDraggable)
+                {
+                    ChromeWidgetMessageInterceptor.Setup(_interceptor, Handle, _hostConfig.HostPlacement.FramelessOptions, (message) =>
+                    {
+                        var msg = (WM)message.Value;
+                        switch (msg)
+                        {
+                            case WM.LBUTTONDOWN:
+                                User32Methods.ReleaseCapture();
+                                NativeMethods.SendMessage(Handle, (int)WM.SYSCOMMAND, NativeMethods.SC_DRAGMOVE, 0);
+                                break;
+                        }
+                    });
+                }
             }
         }
 
@@ -177,11 +191,11 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
 
                         if (handler.RegisterAsAsync)
                         {
-                            mBrowser.RegisterAsyncJsObject(handler.ObjectNameToBind, boundObject, options);
+                            Browser.RegisterAsyncJsObject(handler.ObjectNameToBind, boundObject, options);
                         }
                         else
                         {
-                            mBrowser.RegisterJsObject(handler.ObjectNameToBind, boundObject, options);
+                            Browser.RegisterJsObject(handler.ObjectNameToBind, boundObject, options);
                         }
                     }
                 }

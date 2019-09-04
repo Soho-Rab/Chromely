@@ -1,17 +1,17 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="UrlSchemeProvider.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Chromely.Core.Infrastructure
 {
-    using System.Collections.Generic;
-    using System.Linq;
-
     /// <summary>
     /// The url scheme provider.
     /// </summary>
@@ -57,7 +57,24 @@ namespace Chromely.Core.Infrastructure
         {
             lock (ObjLock)
             {
-                return UrlSchemes.Any(x => (x.IsUrlOfSameScheme(url) && x.IsExternal));
+                return UrlSchemes.Any(x => (x.IsUrlOfSameScheme(url) && x.UrlSchemeType == UrlSchemeType.External));
+            }
+        }
+
+        /// <summary>
+        /// Checks if url registered is a command url.
+        /// </summary>
+        /// <param name="url">
+        /// The url.
+        /// </param>
+        /// <returns>
+        /// The <see cref="bool"/>.
+        /// </returns>
+        public static bool IsUrlRegisteredCommand(string url)
+        {
+            lock (ObjLock)
+            {
+                return UrlSchemes.Any(x => (x.IsUrlOfSameScheme(url) && x.UrlSchemeType == UrlSchemeType.Command));
             }
         }
 
@@ -74,7 +91,7 @@ namespace Chromely.Core.Infrastructure
         {
             lock (ObjLock)
             {
-                return UrlSchemes.Any(x => (x.IsUrlOfSameScheme(url) && !x.IsExternal));
+                return UrlSchemes.Any(x => (x.IsUrlOfSameScheme(url) && x.UrlSchemeType == UrlSchemeType.Custom));
             }
         }
     }

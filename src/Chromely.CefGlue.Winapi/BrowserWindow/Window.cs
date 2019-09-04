@@ -1,45 +1,43 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="Window.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
-// --------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------
+
+using System;
+using Chromely.CefGlue.Browser;
+using Chromely.CefGlue.BrowserWindow;
+using Chromely.Common;
+using Chromely.Core;
+using WinApi.User32;
+using Xilium.CefGlue;
 
 namespace Chromely.CefGlue.Winapi.BrowserWindow
 {
-    using System;
-
-    using Chromely.CefGlue.Winapi.Browser;
-    using Chromely.Core;
-    using WinApi.User32;
-    using Xilium.CefGlue;
-
     /// <summary>
     /// The window.
     /// </summary>
-    public class Window : NativeWindow
+    internal class Window : NativeWindow, IWindow
     {
         /// <summary>
         /// The host/app/window application.
         /// </summary>
-        private readonly HostBase mApplication;
+        private readonly HostBase _application;
 
         /// <summary>
         /// The host config.
         /// </summary>
-        private readonly ChromelyConfiguration mHostConfig;
-
-        /// <summary>
-        /// The CefGlueBrowser object.
-        /// </summary>
-        private readonly CefGlueBrowser mBrowser;
+        private readonly ChromelyConfiguration _hostConfig;
 
         /// <summary>
         /// The browser window handle.
         /// </summary>
-        private IntPtr mBrowserWindowHandle;
+        private IntPtr _browserWindowHandle;
+
+        private ChromeWidgetMessageInterceptor _interceptor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Window"/> class.
@@ -53,46 +51,54 @@ namespace Chromely.CefGlue.Winapi.BrowserWindow
         public Window(HostBase application, ChromelyConfiguration hostConfig)
             : base(hostConfig)
         {
-            mHostConfig = hostConfig;
-            mBrowser = new CefGlueBrowser(this, hostConfig, new CefBrowserSettings());
-            mBrowser.Created += OnBrowserCreated;
-            mApplication = application;
+            _hostConfig = hostConfig;
+            Browser = new CefGlueBrowser(this, hostConfig, new CefBrowserSettings());
+            Browser.Created += OnBrowserCreated;
+            _application = application;
+
+            // Set event handler
+            Browser.SetEventHandlers();
 
             ShowWindow();
         }
 
         /// <summary>
-        /// The web browser.
+        /// The browser.
         /// </summary>
-        public CefGlueBrowser WebBrowser => mBrowser;
-
-        #region Close/Dispose
+        public CefGlueBrowser Browser { get; private set; }
 
         /// <summary>
-        /// The close.
+        /// Gets the window handle.
         /// </summary>
-        public void Close()
+        public IntPtr HostHandle => Handle;
+
+        public void CenterToScreen()
         {
-            Dispose();
+            base.CenterToScreen();
         }
+
+        /// <inheritdoc />
+        public new void Exit()
+        {
+            base.CloseWindowExternally();
+        }
+
+        #region Dispose
 
         /// <summary>
         /// The dispose.
         /// </summary>
         public void Dispose()
         {
-            if (mBrowser != null)
+            if (Browser != null)
             {
-                var browser = mBrowser.CefBrowser;
-                var host = browser.GetHost();
-                host.CloseBrowser();
-                host.Dispose();
-                browser.Dispose();
-                mBrowserWindowHandle = IntPtr.Zero;
+                Browser.Dispose();
+                Browser = null;
+                _browserWindowHandle = IntPtr.Zero;
             }
         }
 
-        #endregion Close/Dispose
+        #endregion Dispose
 
         /// <summary>
         /// The on realized.
@@ -112,8 +118,9 @@ namespace Chromely.CefGlue.Winapi.BrowserWindow
         protected override void OnCreate(IntPtr hwnd, int width, int height)
         {
             var windowInfo = CefWindowInfo.Create();
-            windowInfo.SetAsChild(hwnd, new CefRectangle(0, 0, mHostConfig.HostWidth, mHostConfig.HostHeight));
-            mBrowser.Create(windowInfo);
+            var placement = _hostConfig.HostPlacement;
+            windowInfo.SetAsChild(hwnd, new CefRectangle(0, 0, placement.Width, placement.Height));
+            Browser.Create(windowInfo);
         }
 
         /// <summary>
@@ -127,17 +134,17 @@ namespace Chromely.CefGlue.Winapi.BrowserWindow
         /// </param>
         protected override void OnSize(int width, int height)
         {
-            if (mBrowserWindowHandle != IntPtr.Zero)
+            if (_browserWindowHandle != IntPtr.Zero)
             {
                 if (width == 0 && height == 0)
                 {
                     // For windowed browsers when the frame window is minimized set the
                     // browser window size to 0x0 to reduce resource usage.
-                    NativeMethods.SetWindowPos(mBrowserWindowHandle, IntPtr.Zero, 0, 0, 0, 0, WindowPositionFlags.SWP_NOZORDER | WindowPositionFlags.SWP_NOMOVE | WindowPositionFlags.SWP_NOACTIVATE);
+                    NativeMethods.SetWindowPos(_browserWindowHandle, IntPtr.Zero, 0, 0, 0, 0, WindowPositionFlags.SWP_NOZORDER | WindowPositionFlags.SWP_NOMOVE | WindowPositionFlags.SWP_NOACTIVATE);
                 }
                 else
                 {
-                    NativeMethods.SetWindowPos(mBrowserWindowHandle, IntPtr.Zero, 0, 0, width, height, WindowPositionFlags.SWP_NOZORDER);
+                    NativeMethods.SetWindowPos(_browserWindowHandle, IntPtr.Zero, 0, 0, width, height, WindowPositionFlags.SWP_NOZORDER);
                 }
             }
         }
@@ -147,7 +154,7 @@ namespace Chromely.CefGlue.Winapi.BrowserWindow
         /// </summary>
         protected override void OnExit()
         {
-            mApplication.Quit();
+            _application.Quit();
         }
 
         /// <summary>
@@ -161,11 +168,27 @@ namespace Chromely.CefGlue.Winapi.BrowserWindow
         /// </param>
         private void OnBrowserCreated(object sender, EventArgs e)
         {
-            mBrowserWindowHandle = mBrowser.CefBrowser.GetHost().GetWindowHandle();
-            if (mBrowserWindowHandle != IntPtr.Zero)
+            _browserWindowHandle = Browser.CefBrowser.GetHost().GetWindowHandle();
+            if (_browserWindowHandle != IntPtr.Zero)
             {
                 var size = GetClientSize();
-                NativeMethods.SetWindowPos(mBrowserWindowHandle, IntPtr.Zero, 0, 0, size.Width, size.Height, WindowPositionFlags.SWP_NOZORDER);
+                NativeMethods.SetWindowPos(_browserWindowHandle, IntPtr.Zero, 0, 0, size.Width, size.Height, WindowPositionFlags.SWP_NOZORDER);
+
+                if (_hostConfig.HostPlacement.Frameless && _hostConfig.HostPlacement.FramelessOptions.IsDraggable)
+                {
+                    ChromeWidgetMessageInterceptor.Setup(_interceptor, Handle, _hostConfig.HostPlacement.FramelessOptions, (message) =>
+                    {
+                        var msg = (WM)message.Value;
+                        switch (msg)
+                        {
+                            case WM.LBUTTONDOWN:
+                                User32Methods.ReleaseCapture();
+                                NativeMethods.SendMessage(Handle, (int)WM.SYSCOMMAND, NativeMethods.SC_DRAGMOVE, 0);
+                                break;
+                        }
+
+                    });
+                }
             }
         }
     }

@@ -1,16 +1,16 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="UrlScheme.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+
 namespace Chromely.Core.Infrastructure
 {
-    using System;
-
     /// <summary>
     /// The url scheme.
     /// </summary>
@@ -25,35 +25,46 @@ namespace Chromely.Core.Infrastructure
         /// <param name="host">
         /// The host.
         /// </param>
-        /// <param name="isExternal">
+        /// <param name="type">
         /// The is external.
         /// </param>
-        public UrlScheme(string scheme, string host, bool isExternal)
+        public UrlScheme(string scheme, string host, UrlSchemeType type)
         {
             Scheme = scheme;
             Host = host;
-            IsExternal = isExternal;
+            UrlSchemeType = type;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UrlScheme"/> class.
         /// </summary>
-        /// <param name="url">
-        /// The url.
+        /// <param name="baseUrl">
+        /// The base url.
         /// </param>
-        /// <param name="isExternal">
-        /// The is external.
+        /// <param name="type">
+        /// The is url scheme type.
         /// </param>
-        public UrlScheme(string url, bool isExternal)
+        /// <param name="baseUrlStrict">
+        /// Sets true or false, if base url must be relative to the base url.
+        /// </param>
+        public UrlScheme(string baseUrl, UrlSchemeType type, bool baseUrlStrict = true)
         {
-            if (!string.IsNullOrEmpty(url))
+            BaseUrl = baseUrl;
+            UrlSchemeType = type;
+            BaseUrlStrict = baseUrlStrict;
+
+            if (!string.IsNullOrEmpty(BaseUrl))
             {
-                var uri = new Uri(url);
+                var uri = new Uri(BaseUrl);
                 Scheme = uri.Scheme;
                 Host = uri.Host;
-                IsExternal = isExternal;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the base url.
+        /// </summary>
+        public string BaseUrl { get; set; }
 
         /// <summary>
         /// Gets or sets the scheme.
@@ -66,9 +77,18 @@ namespace Chromely.Core.Infrastructure
         public string Host { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether is external.
+        /// Gets or sets url scheme type.
         /// </summary>
-        public bool IsExternal { get; set; }
+        public UrlSchemeType UrlSchemeType { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether url must be relative to base.
+        /// Only valid for external url.
+        /// If base is http://a.com/me/you then 
+        /// http://a.com/me/you/they is valid but
+        /// http://a.com/me/they is not  valid
+        /// </summary>
+        public bool BaseUrlStrict { get; set; }
 
         /// <summary>
         /// Check if scheme is a standard type.
@@ -129,10 +149,27 @@ namespace Chromely.Core.Infrastructure
             if (Scheme.ToLower().Equals(uri.Scheme) &&
                 Host.ToLower().Equals(uri.Host))
             {
-                return true;
+                return IsValidUrl(url);
             }
 
             return false;
+        }
+
+        private bool IsValidUrl(string url)
+        {
+            if (BaseUrlStrict &&
+                !string.IsNullOrWhiteSpace(BaseUrl) &&
+                !string.IsNullOrWhiteSpace(url))
+            {
+                if (url.StartsWith(BaseUrl, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            return true;
         }
     }
 }

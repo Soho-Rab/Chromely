@@ -472,6 +472,38 @@
             The <see cref="T:Chromely.Core.ChromelyConfiguration"/> object.
             </returns>
         </member>
+        <member name="M:Chromely.Core.ChromelyConfiguration.RegisterEventHandler``1(Chromely.Core.Helpers.CefEventKey,System.EventHandler{``0})">
+            <summary>
+            The register event handler.
+            </summary>
+            <param name="key">
+            The key.
+            </param>
+            <param name="handler">
+            The handler.
+            </param>
+            <typeparam name="T">
+            </typeparam>
+            <returns>
+            The <see cref="T:Chromely.Core.ChromelyConfiguration"/>.
+            </returns>
+        </member>
+        <member name="M:Chromely.Core.ChromelyConfiguration.RegisterEventHandler``1(Chromely.Core.Helpers.CefEventKey,Chromely.Core.ChromelyEventHandler{``0})">
+            <summary>
+            The register event handler.
+            </summary>
+            <param name="key">
+            The key.
+            </param>
+            <param name="handler">
+            The handler.
+            </param>
+            <typeparam name="T">
+            </typeparam>
+            <returns>
+            The <see cref="T:Chromely.Core.ChromelyConfiguration"/>.
+            </returns>
+        </member>
         <member name="M:Chromely.Core.ChromelyConfiguration.RegisterCustomHandler(Chromely.Core.Helpers.CefHandlerKey,System.Type)">
             <summary>
             Registers custom handler.
@@ -642,6 +674,50 @@
             <returns>
             The <see cref="T:System.Int32"/> value.
             </returns>
+        </member>
+        <member name="T:Chromely.Core.ChromelyEventHandler`1">
+            <summary>
+            The chromely event handler.
+            </summary>
+            <typeparam name="T">
+            </typeparam>
+        </member>
+        <member name="M:Chromely.Core.ChromelyEventHandler`1.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Chromely.Core.ChromelyEventHandler`1"/> class. 
+            </summary>
+        </member>
+        <member name="M:Chromely.Core.ChromelyEventHandler`1.#ctor(Chromely.Core.Helpers.CefEventKey,System.EventHandler{`0})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Chromely.Core.ChromelyEventHandler`1"/> class.
+            </summary>
+            <param name="eventKey">
+            The event key.
+            </param>
+            <param name="handler">
+            The handler.
+            </param>
+        </member>
+        <member name="M:Chromely.Core.ChromelyEventHandler`1.#ctor(System.String,System.EventHandler{`0})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Chromely.Core.ChromelyEventHandler`1"/> class.
+            </summary>
+            <param name="key">
+            The key.
+            </param>
+            <param name="handler">
+            The handler.
+            </param>
+        </member>
+        <member name="P:Chromely.Core.ChromelyEventHandler`1.Key">
+            <summary>
+            Gets the key.
+            </summary>
+        </member>
+        <member name="P:Chromely.Core.ChromelyEventHandler`1.Handler">
+            <summary>
+            Gets or sets the handler.
+            </summary>
         </member>
         <member name="T:Chromely.Core.ChromelyJsHandler">
             <summary>
@@ -841,76 +917,76 @@
             Gets or sets the handler factory.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes">
             <summary>
             The cef handler dummy types.
             The class holds a set of dummy handler interfaces as keys for registering handlers.
             This allow of the keys to be used for both CefSharp and CefGlue implementations.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.ILifeSpanHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.ILifeSpanHandler">
             <summary>
             The LifeSpanHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.ILoadHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.ILoadHandler">
             <summary>
             The LoadHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IRequestHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IRequestHandler">
             <summary>
             The RequestHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IDisplayHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IDisplayHandler">
             <summary>
             The DisplayHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IContextMenuHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IContextMenuHandler">
             <summary>
             The ContextMenuHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IFocusHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IFocusHandler">
             <summary>
             The FocusHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IKeyboardHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IKeyboardHandler">
             <summary>
             The KeyboardHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IJsDialogHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IJsDialogHandler">
             <summary>
             The JsDialogHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IDialogHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IDialogHandler">
             <summary>
             The DialogHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IDragHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IDragHandler">
             <summary>
             The DragHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IDownloadHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IDownloadHandler">
             <summary>
             The DownloadHandler interface.
             </summary>
         </member>
-        <member name="T:Chromely.Core.Helpers.CefHandlerFakeTypes.IFindHandler">
+        <member name="T:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.IFindHandler">
             <summary>
             The FindHandler interface.
             </summary>
         </member>
-        <member name="M:Chromely.Core.Helpers.CefHandlerFakeTypes.GetHandlerType(Chromely.Core.Helpers.CefHandlerKey)">
+        <member name="M:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.GetHandlerType(Chromely.Core.Helpers.CefHandlerKey)">
             <summary>
-            The get handler type.
+            The get custom handler type.
             </summary>
             <param name="key">
             The key.
@@ -919,13 +995,189 @@
             The <see cref="T:System.Type"/>.
             </returns>
         </member>
-        <member name="M:Chromely.Core.Helpers.CefHandlerFakeTypes.GetAllHandlerKeys">
+        <member name="M:Chromely.Core.Helpers.CefCustomHandlerFakeTypes.GetAllCustomHandlerKeys">
             <summary>
             The get all handler keys.
             </summary>
             <returns>
             The <see cref="T:System.Collections.IList"/>.
             </returns>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes">
+            <summary>
+            The cef handler dummy types.
+            The class holds a set of dummy handler interfaces as keys for registering handlers.
+            This allow of the keys to be used for both CefSharp and CefGlue implementations.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.INoneHandler">
+            <summary>
+            The None interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IFrameLoadStartHandler">
+            <summary>
+            The FrameLoadStart interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IAddressChangedHandler">
+            <summary>
+            The AddressChanged interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.ITitleChangedHandler">
+            <summary>
+            The TitleChanged interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IFrameLoadEndHandler">
+            <summary>
+            The FrameLoadEnd interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.ILoadingStateChangedHandler">
+            <summary>
+            The LoadingStateChanged interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IConsoleMessageHandler">
+            <summary>
+            The ConsoleMessage interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IStatusMessageHandler">
+            <summary>
+            The StatusMessageHandler interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.ILoadErrorHandler">
+            <summary>
+            The LoadError interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.ITooltipChangedHandler">
+            <summary>
+            The TooltipChangedHandler interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IBeforeCloseHandler">
+            <summary>
+            The BeforeCloseHandler interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IBeforePopupHandler">
+            <summary>
+            The BeforePopupHandler interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IPluginCrashedHandler">
+            <summary>
+            The PluginCrashedHandler interface.
+            </summary>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventHandlerFakeTypes.IRenderProcessTerminatedHandler">
+            <summary>
+            The RenderProcessTerminatedHandler interface.
+            </summary>
+        </member>
+        <member name="M:Chromely.Core.Helpers.CefEventHandlerFakeTypes.GetHandlerType(Chromely.Core.Helpers.CefEventKey)">
+            <summary>
+            The get custom handler type.
+            </summary>
+            <param name="key">
+            The key.
+            </param>
+            <returns>
+            The <see cref="T:System.Type"/>.
+            </returns>
+        </member>
+        <member name="M:Chromely.Core.Helpers.CefEventHandlerFakeTypes.GetAllEventHandlerKeys">
+            <summary>
+            The get all event handler keys.
+            </summary>
+            <returns>
+            The <see cref="T:System.Collections.IList"/>.
+            </returns>
+        </member>
+        <member name="T:Chromely.Core.Helpers.CefEventKey">
+            <summary>
+            The cef event key.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.None">
+            <summary>
+            The none.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.FrameLoadStart">
+            <summary>
+            The frame load start.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.AddressChanged">
+            <summary>
+            The address changed.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.TitleChanged">
+            <summary>
+            The title changed.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.FrameLoadEnd">
+            <summary>
+            The frame load end.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.LoadingStateChanged">
+            <summary>
+            The loading state changed.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.ConsoleMessage">
+            <summary>
+            The console message.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.StatusMessage">
+            <summary>
+            The status message.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.LoadError">
+            <summary>
+            The load error.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.TooltipChanged">
+            <summary>
+            The tooltip changed.
+            For CefGlue apps only.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.BeforeClose">
+            <summary>
+            The before close.
+            For CefGlue apps only.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.BeforePopup">
+            <summary>
+            The before popup.
+            For CefGlue apps only.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.PluginCrashed">
+            <summary>
+            The plugin crashed.
+            For CefGlue apps only.
+            </summary>
+        </member>
+        <member name="F:Chromely.Core.Helpers.CefEventKey.RenderProcessTerminated">
+            <summary>
+            The render process terminated.
+            For CefGlue apps only.
+            </summary>
         </member>
         <member name="T:Chromely.Core.Helpers.CefHandlerKey">
             <summary>
@@ -1219,6 +1471,17 @@
             The <see cref="T:System.String"/>.
             </returns>
         </member>
+        <member name="M:Chromely.Core.Helpers.ValueConvertersExtension.EnumToString(Chromely.Core.Helpers.CefEventKey)">
+            <summary>
+            The enum to string.
+            </summary>
+            <param name="key">
+            The key.
+            </param>
+            <returns>
+            The <see cref="T:System.String"/>.
+            </returns>
+        </member>
         <member name="M:Chromely.Core.Helpers.ValueConvertersExtension.ToEnum``1(System.String)">
             <summary>
             The to enum.
@@ -1233,52 +1496,75 @@
             The enum to return.
             </returns>
         </member>
-        <member name="T:Chromely.Core.Host.IChromelyHost">
+        <member name="T:Chromely.Core.Host.IChromelyWindow">
             <summary>
-            The ChromelyHost interface.
+            The IChromelyWindow interface.
             </summary>
         </member>
-        <member name="P:Chromely.Core.Host.IChromelyHost.HostConfig">
+        <member name="P:Chromely.Core.Host.IChromelyWindow.HostConfig">
             <summary>
             Gets the host config.
             </summary>
         </member>
-        <member name="M:Chromely.Core.Host.IChromelyHost.RegisterSchemeHandlers">
+        <member name="P:Chromely.Core.Host.IChromelyWindow.Browser">
             <summary>
-            The register scheme handlers.
+            Gets the browser.
             </summary>
         </member>
-        <member name="M:Chromely.Core.Host.IChromelyHost.RegisterMessageRouters">
+        <member name="M:Chromely.Core.Host.IChromelyWindow.Run(System.String[])">
             <summary>
-            The register message routers.
+            The run.
             </summary>
+            <param name="args">
+            The args.
+            </param>
+            <returns>
+            The <see cref="T:System.Int32"/>.
+            </returns>
         </member>
-        <member name="T:Chromely.Core.Host.WebBrowserBase">
+        <member name="M:Chromely.Core.Host.IChromelyWindow.RegisterEventHandler``1(Chromely.Core.Helpers.CefEventKey,System.EventHandler{``0})">
             <summary>
-            The web browser base.
+            The register event handler.
+            The event handler must be registered before calling "Run".
+            Alternatively this can be done before window is created during ChromelyConfiguration instantiation.
+            Only one type of event handler can be registered. The first one is valid, consequent registrations will be ignored.
             </summary>
+            <param name="key">
+            The key.
+            </param>
+            <param name="handler">
+            The handler.
+            </param>
+            <typeparam name="T">
+            This is the event argument classe - e,g - LoadErrorEventArgs, FrameLoadStartEventArgs. 
+            </typeparam>
         </member>
-        <member name="F:Chromely.Core.Host.WebBrowserBase.mDisposed">
+        <member name="M:Chromely.Core.Host.IChromelyWindow.RegisterEventHandler``1(Chromely.Core.Helpers.CefEventKey,Chromely.Core.ChromelyEventHandler{``0})">
             <summary>
-            The disposed flag.
+            The register event handler.
             </summary>
+            <param name="key">
+            The key.
+            </param>
+            <param name="handler">
+            The handler.
+            </param>
+            <typeparam name="T">
+            This is the event argument classe - e,g - LoadErrorEventArgs, FrameLoadStartEventArgs. 
+            </typeparam>
         </member>
-        <member name="M:Chromely.Core.Host.WebBrowserBase.Finalize">
+        <member name="M:Chromely.Core.Host.IChromelyWindow.RegisterCustomHandler(Chromely.Core.Helpers.CefHandlerKey,System.Type)">
             <summary>
-            Finalizes an instance of the <see cref="T:Chromely.Core.Host.WebBrowserBase"/> class. 
+            The register custom handler. 
+            The custom handler must be registered before calling "Run".
+            Alternatively this can be done before window is created during ChromelyConfiguration instantiation.
+            Only one type of custom handler can be registered. The first one is valid, consequent registrations will be ignored.
             </summary>
-        </member>
-        <member name="M:Chromely.Core.Host.WebBrowserBase.Dispose">
-            <summary>
-            The dispose method.
-            </summary>
-        </member>
-        <member name="M:Chromely.Core.Host.WebBrowserBase.Dispose(System.Boolean)">
-            <summary>
-            The dispose method - checks if disposing flag is set.
-            </summary>
-            <param name="disposing">
-            The disposing.
+            <param name="key">
+            The key.
+            </param>
+            <param name="implementation">
+            The implementation.
             </param>
         </member>
         <member name="T:Chromely.Core.Host.WebBrowserBaseExtension">
@@ -1297,41 +1583,6 @@
             <param name="action">
             The action.
             </param>
-        </member>
-        <member name="T:Chromely.Core.Host.Win32Message">
-            <summary>
-            The win 32 message.
-            </summary>
-        </member>
-        <member name="P:Chromely.Core.Host.Win32Message.Hwnd">
-            <summary>
-            Gets or sets the hwnd.
-            </summary>
-        </member>
-        <member name="P:Chromely.Core.Host.Win32Message.Value">
-            <summary>
-            Gets or sets the value.
-            </summary>
-        </member>
-        <member name="P:Chromely.Core.Host.Win32Message.WParam">
-            <summary>
-            Gets or sets the w param.
-            </summary>
-        </member>
-        <member name="P:Chromely.Core.Host.Win32Message.LParam">
-            <summary>
-            Gets or sets the l param.
-            </summary>
-        </member>
-        <member name="P:Chromely.Core.Host.Win32Message.Time">
-            <summary>
-            Gets or sets the time.
-            </summary>
-        </member>
-        <member name="P:Chromely.Core.Host.Win32Message.Point">
-            <summary>
-            Gets or sets the point.
-            </summary>
         </member>
         <member name="T:Chromely.Core.Host.WindowState">
             <summary>

@@ -1,22 +1,22 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="RegisterServiceAssembliesExtension.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+
+using Chromely.Core.Infrastructure;
+
 namespace Chromely.Core.RestfulService
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Reflection;
-
-    using Chromely.Core.Infrastructure;
-
     /// <summary>
     /// The registration of service assemblies extension.
     /// </summary>

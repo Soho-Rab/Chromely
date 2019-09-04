@@ -1,18 +1,19 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="HostHelpers.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
-// --------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------
+
+using System;
+using Chromely.Core.Infrastructure;
+using WinApi.Windows;
+// ReSharper disable UnusedMember.Global
 
 namespace Chromely.CefGlue.Winapi
 {
-    using System;
-    using Chromely.Core.Infrastructure;
-    using WinApi.Windows;
-
     /// <summary>
     /// The host helpers.
     /// </summary>

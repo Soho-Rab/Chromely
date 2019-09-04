@@ -1,27 +1,28 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="CefSharpBrowserHostTest.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace Chromely.CefSharp.Winapi.Tests.ChromeHost
+using System;
+using System.IO;
+using System.Linq;
+using Chromely.CefSharp.Winapi.Browser;
+using Chromely.CefSharp.Winapi.Tests.Models;
+using Chromely.Core;
+using Chromely.Core.Helpers;
+using Chromely.Core.Infrastructure;
+using Xunit;
+using Xunit.Abstractions;
+
+using CefSharpGlobal = global::CefSharp;
+using LogSeverity = Chromely.Core.Infrastructure.LogSeverity;
+
+namespace Chromely.CefSharp.Winapi.Tests.BrowserWindow
 {
-    using System.Linq;
-
-    using Chromely.CefSharp.Winapi.Browser;
-    using Chromely.CefSharp.Winapi.Tests.Models;
-    using Chromely.Core;
-    using Chromely.Core.Helpers;
-    using Chromely.Core.Infrastructure;
-
-    using Xunit;
-    using Xunit.Abstractions;
-
-    using CefSharpGlobal = global::CefSharp;
-
     /// <summary>
     /// The chromely configuration test.
     /// </summary>
@@ -31,7 +32,7 @@ namespace Chromely.CefSharp.Winapi.Tests.ChromeHost
         /// The output.
         /// </summary>
         // ReSharper disable once NotAccessedField.Local
-        private readonly ITestOutputHelper mTestOutput;
+        private readonly ITestOutputHelper _testOutput;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CefSharpBrowserHostTest"/> class.
@@ -41,7 +42,7 @@ namespace Chromely.CefSharp.Winapi.Tests.ChromeHost
         /// </param>
         public CefSharpBrowserHostTest(ITestOutputHelper testOutput)
         {
-            mTestOutput = testOutput;
+            _testOutput = testOutput;
         }
 
         /// <summary>
@@ -50,16 +51,23 @@ namespace Chromely.CefSharp.Winapi.Tests.ChromeHost
         [Fact]
         public void CustomSchemerTests()
         {
-            var config = GetBaseConfig()
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                return;
+            }
+
+            GetBaseConfig()
                 .RegisterSchemeHandler("http", "cefsharp1.com", new CustomSchemeHandlerFactory());
 
-            var schemeHandlerObjs = IoC.GetAllInstances(typeof(ChromelySchemeHandler));
+            var schemeHandlerInstances = IoC.GetAllInstances(typeof(ChromelySchemeHandler));
 
-            Assert.NotNull(schemeHandlerObjs);
+            Assert.NotNull(schemeHandlerInstances);
 
-            var schemeHandlers = schemeHandlerObjs.ToList();
-            int count = schemeHandlers.Count;
-            Assert.Equal(1, count);
+            var schemeHandlers = schemeHandlerInstances.ToList();
+
+            // use type names to see why that failed
+            var schemeHandlerTypes = schemeHandlers.Select(h => h.GetType().Name);
+            Assert.Equal(nameof(ChromelySchemeHandler), string.Join(";", schemeHandlerTypes));
 
             Assert.True(schemeHandlers[0] is ChromelySchemeHandler);
 
@@ -76,6 +84,11 @@ namespace Chromely.CefSharp.Winapi.Tests.ChromeHost
         [Fact]
         public void SettingsUpdateTest()
         {
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                return;
+            }
+            
             var hostConfig = GetConfigWithDefaultValues();
             var settings = new CefSettings
             {
@@ -121,7 +134,7 @@ namespace Chromely.CefSharp.Winapi.Tests.ChromeHost
             var config = GetBaseConfig()
                 .UseDefaultResourceSchemeHandler("local", string.Empty)
                 .UseDefaultHttpSchemeHandler("http", "chromely.com")
-                .UseDefautJsHandler("boundedObject", true)
+                .UseDefaultJsHandler("boundedObject", true)
                 .WithCustomSetting(CefSettingKeys.NoSandbox, true)
                 .WithCustomSetting(CefSettingKeys.SingleProcess, true)
                 .WithCustomSetting(CefSettingKeys.BrowserSubprocessPath, nameof(CefSettingKeys.BrowserSubprocessPath))
@@ -163,8 +176,8 @@ namespace Chromely.CefSharp.Winapi.Tests.ChromeHost
             var hostWidth = 1200;
             var hostHeight = 900;
 
-            var cefLogFile = "logs\\chromely.cef_new.log";
-            var defaultLogFile = "logs\\chromely_new.log";
+            var cefLogFile = Path.Combine("logs", "chromely.cef_new.log");
+            var defaultLogFile = Path.Combine("logs", "chromely_new.log");
             string startUrl = "www.google.com";
 
             var logSeverity = LogSeverity.Error;
@@ -173,7 +186,7 @@ namespace Chromely.CefSharp.Winapi.Tests.ChromeHost
                 .WithHostTitle(title)
                 .WithHostIconFile(iconFile)
                 .WithAppArgs(null)
-                .WithHostSize(hostWidth, hostHeight)
+                .WithHostBounds(hostWidth, hostHeight)
                 .WithLogFile(cefLogFile)
                 .WithStartUrl(startUrl)
                 .WithLogSeverity(logSeverity)

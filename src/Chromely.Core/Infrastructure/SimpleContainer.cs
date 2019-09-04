@@ -1,18 +1,28 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="SimpleContainer.cs" company="Chromely Projects">
+//   Copyright (c) 2017-2019 Chromely Projects
+// </copyright>
+// <license>
+//      See the LICENSE.md file in the project root for more information.
+// </license>
+// --------------------------------------------------------------------------------------------------------------------
+
+// --------------------------------------------------------------------------------------------------------------------
 // This is a port of Caliburn.Light SimpleContainer for Chromely.Mostly provided as-is. 
 // For more info: https://github.com/tibel/Caliburn.Light/blob/master/src/Caliburn.Core/IoC/SimpleContainer.cs
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Chromely.Core;
+
 // ReSharper disable once CheckNamespace
+// ReSharper disable UnusedMember.Global
 namespace Caliburn.Light
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Reflection;
-    using Chromely.Core;
-
     /// <summary>
     /// A simple IoC container.
     /// </summary>
@@ -31,14 +41,14 @@ namespace Caliburn.Light
         /// <summary>
         /// The list of entries.
         /// </summary>
-        private readonly List<ContainerEntry> mEntries;
+        private readonly List<ContainerEntry> _entries;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SimpleContainer" /> class.
         /// </summary>
         public SimpleContainer()
         {
-            mEntries = new List<ContainerEntry>();
+            _entries = new List<ContainerEntry>();
         }
 
         /// <summary>
@@ -49,7 +59,7 @@ namespace Caliburn.Light
         /// </param>
         private SimpleContainer(IEnumerable<ContainerEntry> entries)
         {
-            mEntries = new List<ContainerEntry>(entries);
+            _entries = new List<ContainerEntry>(entries);
         }
 
         /// <summary>
@@ -58,7 +68,8 @@ namespace Caliburn.Light
         /// <returns>A new container.</returns>
         public SimpleContainer CreateChildContainer()
         {
-            return new SimpleContainer(mEntries);
+            // ReSharper disable once InconsistentlySynchronizedField
+            return new SimpleContainer(_entries);
         }
 
         /// <summary>
@@ -74,7 +85,10 @@ namespace Caliburn.Light
                 throw new ArgumentNullException(nameof(service));
             }
 
-            return mEntries.Any(x => x.Service == service && x.Key == key);
+            lock (_entries)
+            {
+                return _entries.Any(x => x.Service == service && x.Key == key);
+            }
         }
 
         /// <summary>
@@ -107,7 +121,7 @@ namespace Caliburn.Light
             }
 
             object singleton = null;
-            GetOrCreateEntry(service, key).Add(c => singleton ?? (singleton = c.BuildInstance(implementation)));
+            GetOrCreateEntry(service, key)?.Add(c => singleton ?? (singleton = c.BuildInstance(implementation)));
         }
 
         /// <summary>
@@ -146,7 +160,7 @@ namespace Caliburn.Light
             }
 
             object singleton = null;
-            GetOrCreateEntry(typeof(TService), key).Add(c => singleton ?? (singleton = handler(c)));
+            GetOrCreateEntry(typeof(TService), key)?.Add(c => singleton ?? (singleton = handler(c)));
         }
 
         /// <summary>
@@ -162,7 +176,7 @@ namespace Caliburn.Light
                 throw new ArgumentNullException(nameof(service));
             }
 
-            GetOrCreateEntry(service, key).Add(c => instance);
+            GetOrCreateEntry(service, key)?.Add(c => instance);
         }
 
         /// <summary>
@@ -194,7 +208,7 @@ namespace Caliburn.Light
                 throw new ArgumentNullException(nameof(implementation));
             }
 
-            GetOrCreateEntry(service, key).Add(c => c.BuildInstance(implementation));
+            GetOrCreateEntry(service, key)?.Add(c => c.BuildInstance(implementation));
         }
 
         /// <summary>
@@ -237,7 +251,7 @@ namespace Caliburn.Light
                 throw new ArgumentNullException(nameof(handler));
             }
 
-            GetOrCreateEntry(service, key).Add(handler);
+            GetOrCreateEntry(service, key)?.Add(handler);
         }
 
         /// <summary>
@@ -253,7 +267,7 @@ namespace Caliburn.Light
                 throw new ArgumentNullException(nameof(handler));
             }
 
-            GetOrCreateEntry(typeof(TService), key).Add(c => handler(c));
+            GetOrCreateEntry(typeof(TService), key)?.Add(c => handler(c));
         }
 
         /// <summary>
@@ -269,13 +283,16 @@ namespace Caliburn.Light
                 throw new ArgumentNullException(nameof(service));
             }
 
-            var entry = mEntries.FirstOrDefault(x => x.Service == service && x.Key == key);
-            if (entry == null)
+            lock (_entries)
             {
-                return false;
-            }
+                var entry = _entries.FirstOrDefault(x => x.Service == service && x.Key == key);
+                if (entry == null)
+                {
+                    return false;
+                }
 
-            return mEntries.Remove(entry);
+                return _entries.Remove(entry);
+            }
         }
 
         /// <summary>
@@ -302,15 +319,18 @@ namespace Caliburn.Light
                 throw new ArgumentNullException(nameof(service));
             }
 
-            var entry = mEntries.FirstOrDefault(x => x.Service == service && x.Key == key) ?? mEntries.FirstOrDefault(x => x.Service == service);
-            if (entry != null)
+            lock (_entries)
             {
-                if (entry.Count != 1)
+                var entry = _entries.FirstOrDefault(x => x.Service == service && x.Key == key);
+                if (entry != null)
                 {
-                    throw new InvalidOperationException($"Found multiple registrations for type '{service}' and key {key}.");
-                }
+                    if (entry.Count != 1)
+                    {
+                        throw new InvalidOperationException($"Found multiple registrations for type '{service}' and key {key}.");
+                    }
 
-                return entry[0](this);
+                    return entry[0](this);
+                }
             }
 
             var serviceType = service.GetTypeInfo();
@@ -369,12 +389,15 @@ namespace Caliburn.Light
                 throw new ArgumentNullException(nameof(service));
             }
 
-            var instances = mEntries
-                .Where(x => x.Service == service)
-                .SelectMany(e => e.Select(x => x(this)))
-                .ToArray();
+            lock (_entries)
+            {
+                var instances = _entries
+                    .Where(x => x.Service == service)
+                    .SelectMany(e => e.Select(x => x(this)))
+                    .ToArray();
 
-            return instances;
+                return instances;
+            }
         }
 
         /// <summary>
@@ -386,12 +409,15 @@ namespace Caliburn.Light
         {
             var service = typeof(TService);
 
-            var instances = mEntries
-                .Where(x => x.Service == service)
-                .SelectMany(e => e.Select(x => (TService)x(this)))
-                .ToArray();
+            lock (_entries)
+            {
+                var instances = _entries
+                    .Where(x => x.Service == service)
+                    .SelectMany(e => e.Select(x => (TService)x(this)))
+                    .ToArray();
 
-            return instances;
+                return instances;
+            }
         }
 
         /// <summary>
@@ -442,14 +468,18 @@ namespace Caliburn.Light
         /// </returns>
         private ContainerEntry GetOrCreateEntry(Type service, string key)
         {
-            var entry = mEntries.FirstOrDefault(x => x.Service == service && x.Key == key);
-            if (entry == null)
+            lock (_entries)
             {
-                entry = new ContainerEntry { Service = service, Key = key };
-                mEntries.Add(entry);
+                var entry = _entries.FirstOrDefault(x => x.Service == service && x.Key == key);
+                if (entry == null)
+                {
+                    entry = new ContainerEntry { Service = service, Key = key };
+                    _entries.Add(entry);
+                    return entry;
+                }
             }
 
-            return entry;
+            return null;
         }
 
         /// <summary>

@@ -1,20 +1,20 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="CefSharpRequestHandler.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
-// --------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------
 
-// ReSharper disable StyleCop.SA1210
+using System;
+using System.Security.Cryptography.X509Certificates;
+using global::CefSharp;
+using Chromely.Core.Infrastructure;
+using Chromely.Core.RestfulService;
+
 namespace Chromely.CefSharp.Winapi.Browser.Handlers
 {
-    using System;
-    using System.Security.Cryptography.X509Certificates;
-    using Chromely.Core.Infrastructure;
-    using global::CefSharp;
-
     /// <summary>
     /// The CefSharp request handler.
     /// </summary>
@@ -50,6 +50,13 @@ namespace Chromely.CefSharp.Winapi.Browser.Handlers
             if (isUrlExternal)
             {
                 System.Diagnostics.Process.Start(request.Url);
+                return true;
+            }
+
+            var isUrlCommand = UrlSchemeProvider.IsUrlRegisteredCommand(request.Url);
+            if (isUrlCommand)
+            {
+                CommandTaskRunner.RunAsync(request.Url);
                 return true;
             }
 

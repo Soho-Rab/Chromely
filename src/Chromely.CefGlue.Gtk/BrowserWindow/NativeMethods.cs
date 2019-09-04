@@ -1,21 +1,21 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="NativeMethods.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
-// See the LICENSE.md file in the project root for more information.
+//      See the LICENSE.md file in the project root for more information.
 // </license>
-// --------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------
+
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Runtime.InteropServices;
+using Chromely.Core.Infrastructure;
+using Xilium.CefGlue;
 
 namespace Chromely.CefGlue.Gtk.BrowserWindow
 {
-    using System;
-    using System.Diagnostics.CodeAnalysis;
-    using System.IO;
-    using System.Runtime.InteropServices;
-    using Chromely.Core.Infrastructure;
-    using Xilium.CefGlue;
-
     /// <summary>
     /// The native methods.
     /// </summary>
@@ -78,6 +78,7 @@ namespace Chromely.CefGlue.Gtk.BrowserWindow
 
         /// <summary>
         /// The g connect flags.
+        /// see: https://code.woboq.org/gtk/include/glib-2.0/gobject/gsignal.h.html#GConnectFlags
         /// </summary>
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1602:EnumerationItemsMustBeDocumented", Justification = "Reviewed. Suppression is OK here.")]
         internal enum GConnectFlags
@@ -85,12 +86,12 @@ namespace Chromely.CefGlue.Gtk.BrowserWindow
             /// <summary>
             /// whether the handler should be called before or after the default handler of the signal.
             /// </summary>
-            GConnectAfter,
+            GConnectAfter = 1 << 0,
 
             /// <summary>
             /// whether the instance and data should be swapped when calling the handler; see g_signal_connect_swapped() for an example.
             /// </summary>
-            GConnectSwapped
+            GConnectSwapped = 1 << 1
         }
 
         /// <summary>
@@ -500,6 +501,44 @@ namespace Chromely.CefGlue.Gtk.BrowserWindow
         }
 
         /// <summary>
+        /// The set window maximize.
+        /// </summary>
+        /// <param name="window">
+        /// The window.
+        /// </param>
+        internal static void SetWindowMaximize(IntPtr window)
+        {
+            if (CefRuntime.Platform == CefRuntimePlatform.Windows)
+            {
+                Win.gtk_window_maximize(window);
+            }
+
+            if (CefRuntime.Platform == CefRuntimePlatform.Linux)
+            {
+                Linux.gtk_window_maximize(window);
+            }
+        }
+
+        /// <summary>
+        /// The set fullscreen.
+        /// </summary>
+        /// <param name="window">
+        /// The window.
+        /// </param>
+        internal static void SetFullscreen(IntPtr window)
+        {
+            if (CefRuntime.Platform == CefRuntimePlatform.Windows)
+            {
+                Win.gtk_window_fullscreen(window);
+            }
+
+            if (CefRuntime.Platform == CefRuntimePlatform.Linux)
+            {
+                Linux.gtk_window_fullscreen(window);
+            }
+        }
+
+        /// <summary>
         /// The add configure event.
         /// </summary>
         /// <param name="window">
@@ -567,19 +606,34 @@ namespace Chromely.CefGlue.Gtk.BrowserWindow
         /// <param name="flags">
         /// The flags.
         /// </param>
-        internal static void ConnectSignal(IntPtr window, string name, Delegate callback, int key, IntPtr data, int flags)
+        internal static uint ConnectSignal(IntPtr window, string name, Delegate callback, int key, IntPtr data, int flags)
         {
-            if (CefRuntime.Platform == CefRuntimePlatform.Windows)
+            switch (CefRuntime.Platform)
             {
-                Win.g_signal_connect_data(window, name, callback, key, data, flags);
-            }
-
-            if (CefRuntime.Platform == CefRuntimePlatform.Linux)
-            {
-                Linux.g_signal_connect_data(window, name, callback, key, data, flags);
+                case CefRuntimePlatform.Windows:
+                    return Win.g_signal_connect_data(window, name, callback, key, data, flags);
+                case CefRuntimePlatform.Linux:
+                    return Linux.g_signal_connect_data(window, name, callback, key, data, flags);
+                case CefRuntimePlatform.MacOSX:
+                default:
+                    return 0;
             }
         }
 
+        internal static uint DisconnectSignal(IntPtr window, uint handler)
+        {
+            switch (CefRuntime.Platform)
+            {
+                case CefRuntimePlatform.Windows:
+                    return Win.g_signal_handler_disconnect(window, handler);
+                case CefRuntimePlatform.Linux:
+                    return Linux.g_signal_handler_disconnect(window, handler);
+                case CefRuntimePlatform.MacOSX:
+                default:
+                    return 0;
+            }
+        }
+        
         /// <summary>
         /// The set icon from file.
         /// </summary>
@@ -636,7 +690,7 @@ namespace Chromely.CefGlue.Gtk.BrowserWindow
             /// The handle.
             /// </summary>
             [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1400:AccessModifierMustBeDeclared", Justification = "Reviewed. Suppression is OK here.")]
-            IntPtr Handle;
+            private readonly IntPtr Handle;
         }
 
         /// <summary>
@@ -698,6 +752,12 @@ namespace Chromely.CefGlue.Gtk.BrowserWindow
 
             [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, ExactSpelling = false)]
             internal static extern void gtk_widget_add_events(IntPtr window, GtkEvent eventType);
+
+            [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, ExactSpelling = false)]
+            internal static extern bool gtk_window_maximize(IntPtr window);
+
+            [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, ExactSpelling = false)]
+            internal static extern bool gtk_window_fullscreen(IntPtr window);
 
             [DllImport("user32.dll")]
             [return: MarshalAs(UnmanagedType.Bool)]
@@ -798,6 +858,12 @@ namespace Chromely.CefGlue.Gtk.BrowserWindow
 
             [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, ExactSpelling = false)]
             internal static extern bool gtk_window_set_position(IntPtr window, GtkWindowPosition position);
+
+            [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, ExactSpelling = false)]
+            internal static extern bool gtk_window_maximize(IntPtr window);
+
+            [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, ExactSpelling = false)]
+            internal static extern bool gtk_window_fullscreen(IntPtr window);
 
             [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, ExactSpelling = false)]
             internal static extern void gtk_widget_add_events(IntPtr window, GtkEvent eventType);

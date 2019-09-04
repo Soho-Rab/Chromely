@@ -1,37 +1,49 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="HostBase.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using CefSharp;
+using Chromely.CefSharp.Winapi.Browser;
+using Chromely.CefSharp.Winapi.Browser.Handlers;
+using Chromely.Core;
+using Chromely.Core.Helpers;
+using Chromely.Core.Host;
+using Chromely.Core.Infrastructure;
+using Chromely.Core.RestfulService;
+
+using CefSharpGlobal = global::CefSharp;
+
 namespace Chromely.CefSharp.Winapi.BrowserWindow
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Reflection;
-
-    using Chromely.CefSharp.Winapi.Browser;
-    using Chromely.CefSharp.Winapi.Browser.Handlers;
-    using Chromely.Core;
-    using Chromely.Core.Infrastructure;
-    using Chromely.Core.RestfulService;
-
-    using CefSharpGlobal = global::CefSharp;
-
     /// <summary>
     /// The host base.
     /// </summary>
-    public abstract class HostBase : IChromelyServiceProvider, IDisposable
+    internal abstract class HostBase : IChromelyWindow
     {
+        /// <summary>
+        /// The main view.
+        /// </summary>
+        private Window _mainView;
+
         /// <summary>
         /// The CefSettings object.
         /// </summary>
-        private CefSettings mSettings;
+        private CefSettings _settings;
+
+        /// <summary>
+        /// The Wwindow created.
+        /// </summary>
+        private bool _windowCreated;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HostBase"/> class.
@@ -56,15 +68,40 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
 
         #endregion Destructor
 
+        #region IChromelyWindow implementations
+
         /// <summary>
         /// Gets the host config.
         /// </summary>
         public ChromelyConfiguration HostConfig { get; }
 
         /// <summary>
-        /// Gets or sets the main view.
+        /// Gets the window handle.
         /// </summary>
-        public Window MainView { get; set; }
+        public IntPtr Handle
+        {
+            get
+            {
+                if (_mainView != null)
+                {
+                    return _mainView.Handle;
+                }
+
+                return IntPtr.Zero;
+            }
+        }
+
+        /// <summary>
+        /// Gets the browser.
+        /// </summary>
+        public object Browser => _mainView?.Browser;
+
+        /// <summary>
+        /// The initialize.
+        /// </summary>
+        public void Initialize()
+        {
+        }
 
         /// <summary>
         /// The run.
@@ -89,12 +126,93 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
         }
 
         /// <summary>
-        /// The quit.
+        /// The register event handler.
+        /// The event handler must be registered before calling "Run".
+        /// Alternatively this can be done before window is created during ChromelyConfiguration instantiation.
+        /// Only one type of event handler can be registered. The first one is valid, consequent registrations will be ignored.
         /// </summary>
-        public void Quit()
+        /// <param name="key">
+        /// The key.
+        /// </param>
+        /// <param name="handler">
+        /// The handler.
+        /// </param>
+        /// <typeparam name="T">
+        /// This is the event argument classe - e,g - LoadErrorEventArgs, FrameLoadStartEventArgs. 
+        /// </typeparam>
+        public void RegisterEventHandler<T>(CefEventKey key, EventHandler<T> handler)
         {
-            QuitMessageLoop();
+            if (_windowCreated)
+            {
+                throw new Exception("\"RegisterEventHandler\" method must be called before \"Run\" method.");
+            }
+
+            HostConfig?.RegisterEventHandler(key, handler);
         }
+
+        /// <summary>
+        /// The register event handler.
+        /// </summary>
+        /// <param name="key">
+        /// The key.
+        /// </param>
+        /// <param name="handler">
+        /// The handler.
+        /// </param>
+        /// <typeparam name="T">
+        /// This is the event argument classe - e,g - LoadErrorEventArgs, FrameLoadStartEventArgs. 
+        /// </typeparam>
+        public void RegisterEventHandler<T>(CefEventKey key, ChromelyEventHandler<T> handler)
+        {
+            if (_windowCreated)
+            {
+                throw new Exception("\"RegisterEventHandler\" method must be called before \"Run\" method.");
+            }
+
+            HostConfig?.RegisterEventHandler(key, handler);
+        }
+
+        /// <summary>
+        /// The register custom handler. 
+        /// The custom handler must be registered before calling "Run".
+        /// Alternatively this can be done before window is created during ChromelyConfiguration instantiation.
+        /// Only one type of custom handler can be registered. The first one is valid, consequent registrations will be ignored.
+        /// </summary>
+        /// <param name="key">
+        /// The key.
+        /// </param>
+        /// <param name="implementation">
+        /// The implementation.
+        /// </param>
+        public void RegisterCustomHandler(CefHandlerKey key, Type implementation)
+        {
+            if (_windowCreated)
+            {
+                throw new Exception("\"RegisterCustomHandler\" method must be called before \"Run\" method.");
+            }
+
+            HostConfig?.RegisterCustomHandler(key, implementation);
+        }
+
+        /// <summary>
+        /// The close.
+        /// </summary>
+        public void Close()
+        {
+            _mainView?.CloseWindowExternally();
+        }
+
+        /// <summary>
+        /// The Exit.
+        /// </summary>
+        public void Exit()
+        {
+            _mainView?.CloseWindowExternally();
+        }
+
+        #endregion
+
+        #region IChromelyServiceProvider implementations
 
         /// <summary>
         /// The register url scheme.
@@ -143,12 +261,12 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
         /// <summary>
         /// The register service assemblies.
         /// </summary>
-        /// <param name="filenames">
+        /// <param name="fileNames">
         /// The filenames.
         /// </param>
-        public void RegisterServiceAssemblies(List<string> filenames)
+        public void RegisterServiceAssemblies(List<string> fileNames)
         {
-            HostConfig?.ServiceAssemblies?.RegisterServiceAssemblies(filenames);
+            HostConfig?.ServiceAssemblies?.RegisterServiceAssemblies(fileNames);
         }
 
         /// <summary>
@@ -166,15 +284,27 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
                 if (!assembly.IsScanned)
                 {
                     var scanner = new RouteScanner(assembly.Assembly);
-                    var currentRouteDictionary = scanner.Scan();
+                    var currentRouteDictionary = scanner.Scan().Item1;
+                    var currentCommandDictionary = scanner.Scan().Item2;
                     ServiceRouteProvider.MergeRoutes(currentRouteDictionary);
+                    ServiceRouteProvider.MergeCommands(currentCommandDictionary);
 
                     assembly.IsScanned = true;
                 }
             }
         }
 
-        #region IDisposable
+        #endregion
+
+        #region Quit/IDisposable
+
+        /// <summary>
+        /// The quit.
+        /// </summary>
+        public virtual void Quit()
+        {
+            QuitMessageLoop();
+        }
 
         /// <summary>
         /// The dispose.
@@ -193,44 +323,10 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
         /// </param>
         public virtual void Dispose(bool disposing)
         {
+            _mainView?.Dispose();
         }
 
         #endregion
-
-        #region Abstract Methods
-
-        /// <summary>
-        /// The platform initialize.
-        /// </summary>
-        protected abstract void Initialize();
-
-        /// <summary>
-        /// The platform shutdown.
-        /// </summary>
-        protected abstract void Shutdown();
-
-        /// <summary>
-        /// The platform run message loop.
-        /// </summary>
-        protected abstract void RunMessageLoop();
-
-        /// <summary>
-        /// The platform quit message loop.
-        /// </summary>
-        protected abstract void QuitMessageLoop();
-
-        /// <summary>
-        /// The create main view.
-        /// </summary>
-        /// <param name="settings">
-        /// The settings.
-        /// </param>
-        /// <returns>
-        /// The <see cref="Window"/>.
-        /// </returns>
-        protected abstract Window CreateMainView(CefSettings settings);
-
-        #endregion Abstract Methods
 
         /// <summary>
         /// The run internal.
@@ -244,46 +340,97 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
         private int RunInternal(string[] args)
         {
             // For Windows 7 and above, best to include relevant app.manifest entries as well
-            CefSharpGlobal.Cef.EnableHighDPISupport();
+            Cef.EnableHighDPISupport();
 
             var codeBase = Assembly.GetExecutingAssembly().CodeBase;
             var localFolder = Path.GetDirectoryName(new Uri(codeBase).LocalPath);
             var localesDirPath = Path.Combine(localFolder ?? throw new InvalidOperationException(), "locales");
 
-            mSettings = new CefSettings
-                            {
-                                LocalesDirPath = localesDirPath,
-                                Locale = HostConfig.Locale,
-                                MultiThreadedMessageLoop = true,
-                                CachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CefSharp\\Cache"),
-                                LogSeverity = (CefSharpGlobal.LogSeverity)HostConfig.LogSeverity,
-                                LogFile = HostConfig.LogFile
-                            };
+            _settings = new CefSettings
+            {
+                LocalesDirPath = localesDirPath,
+                Locale = HostConfig.Locale,
+
+               // MultiThreadedMessageLoop = true,
+                // MultiThreadedMessageLoop is not allowed to be used as it will break frameless mode
+                MultiThreadedMessageLoop = !(HostConfig.HostPlacement.Frameless || HostConfig.HostPlacement.KioskMode),
+
+                CachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CefSharp\\Cache"),
+                LogSeverity = (CefSharpGlobal.LogSeverity)HostConfig.LogSeverity,
+                LogFile = HostConfig.LogFile
+            };
 
             // Update configuration settings
-            mSettings.Update(HostConfig.CustomSettings);
-            mSettings.UpdateCommandLineArgs(HostConfig.CommandLineArgs);
+            _settings.Update(HostConfig.CustomSettings);
+            _settings.UpdateCommandLineArgs(HostConfig.CommandLineArgs);
 
             RegisterSchemeHandlers();
 
             // Perform dependency check to make sure all relevant resources are in our output directory.
-            CefSharpGlobal.Cef.Initialize(mSettings, HostConfig.PerformDependencyCheck, null);
-
+            Cef.Initialize(_settings, true, browserProcessHandler: null);
+       
             Initialize();
 
-            MainView = CreateMainView(mSettings);
-            MainView.CenterToScreen();
+            _mainView = CreateMainView(_settings);
+
+            bool centerScreen = HostConfig.HostPlacement.CenterScreen;
+            if (centerScreen)
+            {
+                _mainView.CenterToScreen();
+            }
+
+            _windowCreated = true;
+
+            IoC.RegisterInstance(typeof(IChromelyWindow), typeof(IChromelyWindow).FullName, this);
 
             RunMessageLoop();
 
-            MainView.Dispose();
-            MainView = null;
+            _mainView.Dispose();
+            _mainView = null;
 
-            CefSharpGlobal.Cef.Shutdown();
+            Cef.Shutdown();
 
             Shutdown();
 
             return 0;
+        }
+
+        /// <summary>
+        /// The platform run message loop.
+        /// </summary>
+        private void RunMessageLoop()
+        {
+            NativeWindow.RunMessageLoop();
+        }
+
+        /// <summary>
+        /// The platform quit message loop.
+        /// </summary>
+        private void QuitMessageLoop()
+        {
+            NativeWindow.Exit();
+        }
+
+        /// <summary>
+        /// The shutdown.
+        /// </summary>
+        private void Shutdown()
+        {
+            QuitMessageLoop();
+        }
+
+        /// <summary>
+        /// The create main view.
+        /// </summary>
+        /// <param name="settings">
+        /// The settings.
+        /// </param>
+        /// <returns>
+        /// The <see cref="Window"/>.
+        /// </returns>
+        private Window CreateMainView(CefSettings settings)
+        {
+            return new Window(this, HostConfig, settings);
         }
 
         /// <summary>
@@ -305,7 +452,7 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
                         {
                             if (handler.UseDefaultResource)
                             {
-                                mSettings.RegisterScheme(new CefSharpGlobal.CefCustomScheme
+                                _settings.RegisterScheme(new CefSharpGlobal.CefCustomScheme
                                 {
                                     SchemeName = handler.SchemeName,
                                     DomainName = handler.DomainName,
@@ -317,7 +464,7 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
 
                             if (handler.UseDefaultHttp)
                             {
-                                mSettings.RegisterScheme(new CefSharpGlobal.CefCustomScheme
+                                _settings.RegisterScheme(new CefCustomScheme
                                 {
                                     SchemeName = handler.SchemeName,
                                     DomainName = handler.DomainName,
@@ -327,9 +474,9 @@ namespace Chromely.CefSharp.Winapi.BrowserWindow
                                 });
                             }
                         }
-                        else if (handler.HandlerFactory is CefSharpGlobal.ISchemeHandlerFactory)
+                        else if (handler.HandlerFactory is ISchemeHandlerFactory)
                         {
-                            mSettings.RegisterScheme(new CefSharpGlobal.CefCustomScheme
+                            _settings.RegisterScheme(new CefCustomScheme
                             {
                                 SchemeName = handler.SchemeName,
                                 DomainName = handler.DomainName,

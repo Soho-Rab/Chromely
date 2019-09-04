@@ -1,18 +1,18 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="IChromelyServiceProvider.cs" company="Chromely Projects">
-//   Copyright (c) 2017-2018 Chromely Projects
+//   Copyright (c) 2017-2019 Chromely Projects
 // </copyright>
 // <license>
 //      See the LICENSE.md file in the project root for more information.
 // </license>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Reflection;
+using Chromely.Core.Infrastructure;
+
 namespace Chromely.Core.RestfulService
 {
-    using System.Collections.Generic;
-    using System.Reflection;
-    using Chromely.Core.Infrastructure;
-
     /// <summary>
     /// The ChromelyServiceProvider interface.
     /// </summary>
@@ -53,10 +53,10 @@ namespace Chromely.Core.RestfulService
         /// <summary>
         /// Registers service assemblies.
         /// </summary>
-        /// <param name="filenames">
+        /// <param name="fileNames">
         /// The filenames.
         /// </param>
-        void RegisterServiceAssemblies(List<string> filenames);
+        void RegisterServiceAssemblies(List<string> fileNames);
 
         /// <summary>
         /// Scan assemblies.
