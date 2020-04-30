@@ -14,10 +14,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Chromely.Core;
+using Chromely.Core.Configuration;
 using Chromely.Core.Logging;
 using ICSharpCode.SharpZipLib.BZip2;
 using ICSharpCode.SharpZipLib.Tar;
@@ -39,8 +41,12 @@ namespace Chromely.CefGlue.Loader
         private const string CefBuildsDownloadUrl = "http://opensource.spotify.com/cefbuilds";
         private static string CefBuildsDownloadIndex(string platform) => $"http://opensource.spotify.com/cefbuilds/index.html#{platform}_builds";
         private static string CefDownloadUrl(string name) => $"http://opensource.spotify.com/cefbuilds/{name}";
+        
+        private static string MacOSConfigFile = "Info.plist";
+        
+        private static string MacOSDefaultAppName = "Chromium Embedded Framework";
 
-         /// <summary>
+        /// <summary>
         /// Gets or sets the timeout for the CEF download in minutes.
         /// </summary>
         // ReSharper disable once MemberCanBePrivate.Global
@@ -147,7 +153,7 @@ namespace Chromely.CefGlue.Loader
             var arch = processArchitecture.ToString()
                 .Replace("X64", "64")
                 .Replace("X86", "32");
-            var platformIdentifier = platform.ToString().ToLower() + arch;
+            var platformIdentifier = (platform + arch).ToLower();
             var indexUrl = CefBuildsDownloadIndex(platformIdentifier);
             
             // cef_binary_3.3626.1895.g7001d56_windows64_client.tar.bz2
@@ -163,13 +169,13 @@ namespace Chromely.CefGlue.Loader
                 var cefIndex = client.DownloadString(indexUrl);
                 
                 // up to Chromium version 72
-                var found = new Regex(binaryNamePattern1).Match(cefIndex);
+                var found = new Regex(binaryNamePattern1, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase).Match(cefIndex);
                 if (found.Success)
                 {
                     return found.Groups[1].Value;
                 }
                 // from Chromium version 73 up
-                found = new Regex(binaryNamePattern2).Match(cefIndex);
+                found = new Regex(binaryNamePattern2, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase).Match(cefIndex);
                 if (found.Success)
                 {
                     return found.Groups[1].Value;
@@ -180,6 +186,34 @@ namespace Chromely.CefGlue.Loader
             }
             
             return "";
+        }
+
+        public static void SetMacOSAppName(IChromelyConfiguration config)
+        {
+            if (config.Platform == ChromelyPlatform.MacOSX)
+            {
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        var appName = config.AppName;
+                        if (string.IsNullOrWhiteSpace(appName))
+                        {
+                            appName = Assembly.GetEntryAssembly()?.GetName().Name;
+                        }
+
+                        var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                        var pInfoFile = Path.Combine(appDirectory, MacOSConfigFile);
+                        if (File.Exists(pInfoFile))
+                        {
+                            var pInfoFileText = File.ReadAllText(pInfoFile);
+                            pInfoFileText = pInfoFileText.Replace(MacOSDefaultAppName, appName);
+                            File.WriteAllText(MacOSConfigFile, pInfoFileText);
+                        }
+                    }
+                    catch { }
+                });
+            }
         }
 
         private void GetDownloadUrl()
@@ -387,20 +421,21 @@ namespace Chromely.CefGlue.Loader
             }
 
             // Get the files in the directory and copy them to the new location.
-            FileInfo[] files = dirInfo.GetFiles();
-            foreach (FileInfo file in files)
+            var files = dirInfo.GetFiles();
+            foreach (var file in files)
             {
-                string temppath = Path.Combine(destDirName, file.Name);
-                file.CopyTo(temppath, true);
+                var tempPath = Path.Combine(destDirName, file.Name);
+                file.CopyTo(tempPath, true);
             }
 
-            foreach (DirectoryInfo subdir in dirs)
+            foreach (var subDir in dirs)
             {
-                string temppath = Path.Combine(destDirName, subdir.Name);
-                CopyDirectory(subdir.FullName, temppath);
+                var tempPath = Path.Combine(destDirName, subDir.Name);
+                CopyDirectory(subDir.FullName, tempPath);
             }
         }
 
+        // ReSharper disable once UnusedMember.Local
         private void CopyDirectory2(string srcPath, string dstPath)
         {
             var localesDir = string.Empty;
@@ -422,7 +457,10 @@ namespace Chromely.CefGlue.Loader
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
                 var dstFile = Path.Combine(dstPath, Path.GetFileName(srcFile));
-                File.Copy(srcFile, dstFile, true);
+                if (srcFile != null)
+                {
+                    File.Copy(srcFile, dstFile, true);
+                }
 
                 // Copy all ***-**.pak file to locales directory
                 var fileName = Path.GetFileName(dstFile);

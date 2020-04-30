@@ -3,7 +3,7 @@
 
 When creating a new project, you want to create a .NET Core 3 Console Project (for all platforms - Windows, Linux, MacOS) or a .NET Framework Console Project for Windows. 
 
-Visual Studio 2019 or Visual Studio Code is preferred but any Editor can be used.
+Visual Studio 2019, JetBrains Rider or Visual Studio Code is preferred but any Editor can be used.
 
 Chromely ONLY supports x64 application. Developers can try x86 too but will not be supported.
 
@@ -71,7 +71,7 @@ class Program
 #### Custom Application Class - required
 
 To create a Chromely application, a custom application class (and instance) is required. The class can inherit from any of the abstract class implementations:
-- [BasicChromelyAp](https://github.com/chromelyapps/Chromely/blob/master/src/Chromely/BasicChromelyApp.cs) 
+- [ChromelyBasicApp](https://github.com/chromelyapps/Chromely/blob/master/src/Chromely/ChromelyBasicApp.cs) 
 - [ChromelyEventedApp](https://github.com/chromelyapps/Chromely/blob/master/src/Chromely/ChromelyEventedApp.cs) 
 - [ChromelyApp](https://github.com/chromelyapps/Chromely/blob/master/src/Chromely.Core/ChromelyApp.cs) 
 

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Chromely.Core.Configuration;
@@ -62,7 +65,7 @@ namespace Chromely.Native
             {
                 Logger.Instance.Log.Error("chromelywindow registration failed");
                 return;
-             }
+            }
 
             var styles = GetWindowStyles(_options.WindowState);
 
@@ -149,6 +152,61 @@ namespace Chromely.Native
             return GetClientSize();
         }
 
+        public virtual float GetWindowDpiScale()
+        {
+            const int StandardDpi = 96;
+            float scale = 1;
+            var hdc = GetDC(_handle);
+            try {
+                var dpi = GetDeviceCaps(hdc, (int)DeviceCap.LOGPIXELSY);
+                scale = (float)dpi / StandardDpi;
+            }
+            finally {
+                ReleaseDC(_handle, hdc);
+            }
+            return scale;
+        }
+
+        public virtual WindowState GetWindowState() {
+            var placement = new WINDOWPLACEMENT();
+            placement.Length = Marshal.SizeOf(placement);
+            GetWindowPlacement(_handle, ref placement);
+            switch (placement.ShowCmd) {
+                case ShowWindowCommands.Maximized:
+                    return WindowState.Maximize;
+                case ShowWindowCommands.Minimized:
+                    return WindowState.Minimize;
+                case ShowWindowCommands.Normal:
+                    return WindowState.Normal;
+            }
+            // If unknown
+            return WindowState.Normal;
+        }
+
+
+        /// <summary> Sets window state. Maximise / Minimize / Restore. </summary>
+        /// <param name="state"> The state to set. </param>
+        /// <returns> True if it succeeds, false if it fails. </returns>
+        public virtual bool SetWindowState(WindowState state) {
+            switch (state)
+            {
+                case WindowState.Normal:
+                    // Restore the window
+                    return ShowWindow(_handle, ShowWindowCommand.SW_RESTORE);
+                case WindowState.Minimize:
+                    // Minimize the window
+                    return ShowWindow(_handle, ShowWindowCommand.SW_SHOWMINIMIZED);
+                case WindowState.Maximize:
+                    // Maximize the window
+                    return ShowWindow(_handle, ShowWindowCommand.SW_SHOWMAXIMIZED);
+
+                    // TODO full screen support
+                    // try moving the fullscreen code from CreateWindow / kiosk mode
+                    // into its own function
+            }
+            return false;
+        }
+
         public virtual void ResizeBrowser(IntPtr browserWindow, int width, int height)
         {
             if (browserWindow != IntPtr.Zero)
@@ -185,9 +243,34 @@ namespace Chromely.Native
         }
 
         #region CreateWindow
-        protected virtual IntPtr GetIconHandle()
+
+        private IntPtr GetIconHandle()
         {
             var hIcon = LoadIconFromFile(_options.RelativePathToIconFile);
+            try
+            {
+                if (hIcon == null)
+                {
+                    var assembly = Assembly.GetEntryAssembly();
+                    var iconAsResource = assembly?.GetManifestResourceNames()
+                        .FirstOrDefault(res => res.EndsWith(_options.RelativePathToIconFile));
+                    if (iconAsResource != null)
+                    {
+                        using (var resStream = assembly.GetManifestResourceStream(iconAsResource))
+                        {
+                            using(var fileStream = new FileStream(_options.RelativePathToIconFile, FileMode.Create))
+                            {
+                                resStream?.CopyTo(fileStream);
+                            }
+                        }
+                    }
+                    hIcon = LoadIconFromFile(_options.RelativePathToIconFile);
+                }
+            }
+            catch
+            {
+                // ignore
+            }
             return hIcon ?? LoadIcon(IntPtr.Zero, (IntPtr)IDI_APPLICATION);
         }
 

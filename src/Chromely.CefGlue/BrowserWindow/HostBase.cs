@@ -14,7 +14,7 @@ namespace Chromely.CefGlue.BrowserWindow
 {
     public abstract partial class HostBase : IChromelyWindow
     {
-        protected readonly IChromelyNativeHost _nativeHost;
+        protected IChromelyNativeHost _nativeHost;
         protected readonly IChromelyContainer _container;
         protected readonly IChromelyConfiguration _config;
         protected readonly IChromelyRequestTaskRunner _requestTaskRunner;
@@ -47,6 +47,7 @@ namespace Chromely.CefGlue.BrowserWindow
 
         #region IChromelyWindow implementations
 
+        public IChromelyNativeHost NativeHost => _nativeHost;
         public IChromelyConfiguration Config => _config;
 
         /// <summary>
@@ -186,7 +187,7 @@ namespace Chromely.CefGlue.BrowserWindow
 
             _config.ChromelyVersion = CefRuntime.ChromeVersion;
 
-            var tempFiles = CefBinariesLoader.Load(_config.CefDownloadOptions, _config.Platform);
+            var tempFiles = CefBinariesLoader.Load(_config);
 
             CefRuntime.EnableHighDpiSupport();
 
@@ -247,6 +248,7 @@ namespace Chromely.CefGlue.BrowserWindow
             RegisterMessageRouters();
             RegisterResourceHandlers();
             RegisterSchemeHandlers();
+            RegisterAjaxSchemeHandlers();
 
             CefBinariesLoader.DeleteTempFiles(tempFiles);
 
